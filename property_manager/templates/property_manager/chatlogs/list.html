@@ -1,0 +1,68 @@
+{% extends "property_manager/base.html" %}
+{% block title %}Chat Logs{% endblock %}
+{% block nav_chatlogs %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Chat Logs</h2>
+        <div class="breadcrumb">AI chatbot interactions for your properties</div>
+    </div>
+</div>
+
+<!-- Property Filter -->
+<div class="filter-bar">
+    <a href="{% url 'pm:chatlog_list' %}" class="filter-btn {% if not property_filter %}active{% endif %}">All Properties</a>
+    {% for prop in properties %}
+    <a href="{% url 'pm:chatlog_list' %}?property={{ prop.pk }}" class="filter-btn {% if property_filter == prop.pk|stringformat:'d' %}active{% endif %}">{{ prop.name }}</a>
+    {% endfor %}
+</div>
+
+{% if chatlogs %}
+<div class="card">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Question</th>
+                    <th>AI Response</th>
+                    <th>User</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in chatlogs %}
+                <tr>
+                    <td class="text-sm"><strong>{{ log.property.name }}</strong></td>
+                    <td>
+                        <div class="text-sm">{{ log.user_question|truncatechars:100 }}</div>
+                    </td>
+                    <td>
+                        <div class="text-sm text-secondary">{{ log.ai_response|truncatechars:100 }}</div>
+                    </td>
+                    <td class="text-xs text-muted">
+                        {% if log.is_authenticated %}
+                            <span class="badge badge-active">Auth</span>
+                        {% endif %}
+                        {% if log.has_password_access %}
+                            <span class="badge badge-confirmed">🔑</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-xs text-muted" style="white-space:nowrap;">{{ log.created_at|timesince }} ago</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">📝</div>
+        <h3>No chat logs yet</h3>
+        <p>AI chatbot interactions with your guests will appear here.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -12,15 +12,35 @@ from .models import (
     Booking,
     Category,
     ChatConversation,
+    ChatLog,
     ChatMessage,
+    CoHostRequest,
+    DailyView,
+    Experience,
+    ExperienceImage,
+    ExperienceTranslation,
+    ExternalLink,
+    Feedback,
     GuestDocument,
+    Instruction,
+    InstructionImage,
+    InstructionTranslation,
     Order,
     OrderItem,
+    PromoCode,
+    PromoCodeUsage,
     Property,
+    PropertyBathroom,
+    PropertyBed,
+    PropertyCoHost,
+    PropertyExperience,
+    PropertyImage,
     PropertyPhoto,
+    PropertyTranslation,
     PushNotification,
     ServiceItem,
     Special,
+    UserProfile,
 )
 
 
@@ -32,6 +52,24 @@ class PropertyPhotoInline(admin.TabularInline):
     model = PropertyPhoto
     extra = 1
     fields = ("image", "caption", "order")
+
+
+class PropertyImageInline(admin.TabularInline):
+    model = PropertyImage
+    extra = 1
+    fields = ("image", "caption", "order")
+
+
+class PropertyBedInline(admin.TabularInline):
+    model = PropertyBed
+    extra = 0
+    fields = ("bed_type", "room_name", "quantity")
+
+
+class PropertyBathroomInline(admin.TabularInline):
+    model = PropertyBathroom
+    extra = 0
+    fields = ("bathroom_type", "location", "has_bidet", "has_bathtub", "has_shower", "has_hairdryer")
 
 
 class CategoryInline(admin.TabularInline):
@@ -69,29 +107,79 @@ class ChatMessageInline(admin.TabularInline):
     readonly_fields = ("created_at",)
 
 
+class InstructionImageInline(admin.TabularInline):
+    model = InstructionImage
+    extra = 1
+    fields = ("image", "caption", "is_main", "order")
+
+
+class ExperienceImageInline(admin.TabularInline):
+    model = ExperienceImage
+    extra = 1
+    fields = ("image", "caption", "order")
+
+
+class PropertyCoHostInline(admin.TabularInline):
+    model = PropertyCoHost
+    extra = 0
+    fields = ("co_host", "created_at")
+    readonly_fields = ("created_at",)
+
+
+class ExternalLinkInline(admin.TabularInline):
+    model = ExternalLink
+    extra = 0
+    fields = ("title", "url", "link_type")
+
+
 # ---------------------------------------------------------------------------
 # Model Admins
 # ---------------------------------------------------------------------------
 
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "subscription_plan", "is_banned", "preferred_language")
+    list_filter = ("subscription_plan", "is_banned")
+    search_fields = ("user__username", "user__email")
+
+
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ("name", "owner", "address_short", "is_active", "active_bookings_count")
-    list_filter = ("is_active", "owner")
-    search_fields = ("name", "address", "description")
-    inlines = [PropertyPhotoInline, CategoryInline]
+    list_display = ("name", "owner", "city", "property_type", "is_active", "is_featured", "active_bookings_count")
+    list_filter = ("is_active", "is_featured", "property_type", "owner")
+    search_fields = ("name", "address", "city", "description")
+    inlines = [PropertyPhotoInline, PropertyImageInline, PropertyBedInline,
+               PropertyBathroomInline, PropertyCoHostInline, ExternalLinkInline, CategoryInline]
     fieldsets = (
         (None, {
-            "fields": ("owner", "name", "address", "description", "is_active"),
+            "fields": ("owner", "name", "nickname", "email", "phone", "description", "ai_summary",
+                        "is_active", "is_featured"),
         }),
-        ("Guest Information", {
-            "fields": ("house_rules", "wifi_network", "wifi_password",
-                       "check_in_time", "check_out_time", "emergency_contacts"),
+        ("Property Details", {
+            "fields": ("property_type", "room_type", "capacity", "bedrooms", "beds", "bathrooms", "size"),
+        }),
+        ("Location", {
+            "fields": ("address", "city", "neighborhood", "latitude", "longitude", "manual_geolocalization"),
+        }),
+        ("Amenities", {
+            "fields": ("has_wifi", "has_air_conditioning", "has_heating", "has_kitchen",
+                        "has_washer", "has_netflix", "has_barbecue", "parking", "parking_price",
+                        "pool", "has_garden", "has_balcony"),
+        }),
+        ("Guest Information (Legacy)", {
+            "classes": ("collapse",),
+            "fields": ("house_rules", "wifi_network", "wifi_password", "emergency_contacts"),
+        }),
+        ("Booking & Rules", {
+            "fields": ("check_in_time", "check_out_time", "minimum_stay", "cancellation_policy",
+                        "pets_allowed", "smoking_allowed", "parties_allowed",
+                        "luggage_storage", "luggage_storage_price", "price_range", "ical_url"),
+        }),
+        ("Other", {
+            "fields": ("property_manager_name", "property_manager_phone",
+                        "instruction_password", "welcome_message", "view_count"),
         }),
     )
-
-    @admin.display(description="Address")
-    def address_short(self, obj):
-        return obj.address[:60] + "…" if len(obj.address) > 60 else obj.address
 
     @admin.display(description="Active Bookings")
     def active_bookings_count(self, obj):
@@ -125,25 +213,11 @@ class ServiceItemAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = (
-        "guest_name", "property", "check_in_date", "check_out_date",
-        "status_badge", "is_active",
-    )
+    list_display = ("guest_name", "property", "check_in_date", "check_out_date", "status_badge", "is_active")
     list_filter = ("property", "is_active", "check_in_date")
     search_fields = ("guest_name", "guest_email", "guest_phone")
     readonly_fields = ("access_code", "created_at")
     inlines = [GuestDocumentInline]
-    fieldsets = (
-        (None, {
-            "fields": ("property", "guest_name", "guest_email", "guest_phone"),
-        }),
-        ("Stay Dates", {
-            "fields": ("check_in_date", "check_out_date"),
-        }),
-        ("Settings", {
-            "fields": ("access_code", "language_preference", "is_active", "notes"),
-        }),
-    )
 
     @admin.display(description="Status")
     def status_badge(self, obj):
@@ -192,25 +266,27 @@ class OrderAdmin(admin.ModelAdmin):
         queryset.update(status="declined")
 
 
+@admin.register(Instruction)
+class InstructionAdmin(admin.ModelAdmin):
+    list_display = ("title", "property", "instruction_type", "order")
+    list_filter = ("property", "instruction_type")
+    search_fields = ("title", "content")
+    inlines = [InstructionImageInline]
+
+
+@admin.register(Experience)
+class ExperienceAdmin(admin.ModelAdmin):
+    list_display = ("title", "owner", "category", "price", "is_active", "is_featured")
+    list_filter = ("category", "is_active", "is_featured")
+    search_fields = ("title", "description")
+    inlines = [ExperienceImageInline]
+
+
 @admin.register(PushNotification)
 class PushNotificationAdmin(admin.ModelAdmin):
     list_display = ("title", "property", "target_type", "scheduled_at", "is_sent")
     list_filter = ("property", "is_sent", "target_type")
     search_fields = ("title", "body")
-    fieldsets = (
-        (None, {
-            "fields": ("property", "title", "body"),
-        }),
-        ("Targeting", {
-            "fields": ("target_type", "target_booking", "linked_item"),
-        }),
-        ("Scheduling", {
-            "fields": ("scheduled_at", "recurring_rule"),
-        }),
-        ("Status", {
-            "fields": ("is_sent", "sent_at"),
-        }),
-    )
 
 
 @admin.register(ChatConversation)
@@ -227,6 +303,17 @@ class ChatConversationAdmin(admin.ModelAdmin):
         return "—"
 
 
+@admin.register(ChatLog)
+class ChatLogAdmin(admin.ModelAdmin):
+    list_display = ("property", "user_question_short", "is_authenticated", "created_at")
+    list_filter = ("property", "is_authenticated")
+    search_fields = ("user_question", "ai_response")
+
+    @admin.display(description="Question")
+    def user_question_short(self, obj):
+        return obj.user_question[:80]
+
+
 @admin.register(Special)
 class SpecialAdmin(admin.ModelAdmin):
     list_display = ("display_title", "property", "service_item", "start_date", "end_date", "is_active")
@@ -238,11 +325,39 @@ class SpecialAdmin(admin.ModelAdmin):
         return obj.title or obj.service_item.name
 
 
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ("subject", "feedback_type", "rating", "is_read", "created_at")
+    list_filter = ("feedback_type", "is_read", "rating")
+    search_fields = ("subject", "message")
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ("code", "gift_plan", "duration_months", "current_uses", "max_uses", "is_active")
+    list_filter = ("is_active", "gift_plan")
+    search_fields = ("code", "description")
+
+
 # Register remaining models without custom admin
 admin.site.register(PropertyPhoto)
+admin.site.register(PropertyImage)
+admin.site.register(PropertyBed)
+admin.site.register(PropertyBathroom)
 admin.site.register(GuestDocument)
 admin.site.register(OrderItem)
 admin.site.register(ChatMessage)
+admin.site.register(InstructionImage)
+admin.site.register(ExperienceImage)
+admin.site.register(PropertyExperience)
+admin.site.register(ExternalLink)
+admin.site.register(PropertyCoHost)
+admin.site.register(CoHostRequest)
+admin.site.register(PromoCodeUsage)
+admin.site.register(PropertyTranslation)
+admin.site.register(InstructionTranslation)
+admin.site.register(ExperienceTranslation)
+admin.site.register(DailyView)
 
 # Customize admin site header
 admin.site.site_header = "EV Concierge — Property Manager"

@@ -12,6 +12,8 @@ from .forms import (
     BookingForm,
     CategoryForm,
     ChatReplyForm,
+    ExperienceForm,
+    InstructionForm,
     OrderStatusForm,
     PropertyForm,
     PropertyPhotoFormSet,
@@ -24,7 +26,12 @@ from .models import (
     Booking,
     Category,
     ChatConversation,
+    ChatLog,
     ChatMessage,
+    DailyView,
+    Experience,
+    Feedback,
+    Instruction,
     Order,
     Property,
     PushNotification,
@@ -49,6 +56,7 @@ def dashboard(request):
 
     # Stats
     total_properties = properties.count()
+    total_experiences = Experience.objects.filter(owner=request.user).count()
     active_bookings = Booking.objects.filter(
         property__in=properties,
         check_in_date__lte=today,
@@ -62,6 +70,9 @@ def dashboard(request):
         booking__property__in=properties,
         is_escalated=True,
     )
+    total_instructions = Instruction.objects.filter(
+        property__in=properties,
+    ).count()
     recent_orders = Order.objects.filter(
         booking__property__in=properties,
     ).select_related("booking", "booking__property").order_by("-created_at")[:5]
@@ -70,8 +81,20 @@ def dashboard(request):
         is_sent=False,
     ).order_by("scheduled_at")[:5]
 
+    # Total views across all properties (last 30 days)
+    from datetime import timedelta
+    thirty_days_ago = today - timedelta(days=30)
+    total_views = DailyView.objects.filter(
+        content_type='property',
+        object_id__in=properties.values_list('id', flat=True),
+        date__gte=thirty_days_ago,
+    ).aggregate(total=Sum('view_count'))['total'] or 0
+
     context = {
         "total_properties": total_properties,
+        "total_experiences": total_experiences,
+        "total_instructions": total_instructions,
+        "total_views": total_views,
         "active_bookings": active_bookings,
         "active_bookings_count": active_bookings.count(),
         "pending_orders": pending_orders,
@@ -131,10 +154,183 @@ def property_detail(request, pk):
         form = PropertyForm(instance=prop)
         photo_formset = PropertyPhotoFormSet(instance=prop)
 
+    instructions = prop.instructions.all()
+    instructions_count = instructions.count()
+
     return render(request, "property_manager/properties/detail.html", {
         "property": prop,
         "form": form,
         "photo_formset": photo_formset,
+        "instructions": instructions,
+        "instructions_count": instructions_count,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Instructions (scoped to a property)
+# ---------------------------------------------------------------------------
+
+@login_required
+def instruction_list(request, property_pk):
+    prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
+    instructions = prop.instructions.all()
+    return render(request, "property_manager/instructions/list.html", {
+        "property": prop,
+        "instructions": instructions,
+    })
+
+
+@login_required
+def instruction_create(request, property_pk):
+    prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
+    if request.method == "POST":
+        form = InstructionForm(request.POST)
+        if form.is_valid():
+            instruction = form.save(commit=False)
+            instruction.property = prop
+            instruction.save()
+            messages.success(request, f"Instruction '{instruction.title}' created.")
+            return redirect("pm:instruction_list", property_pk=prop.pk)
+    else:
+        form = InstructionForm()
+    return render(request, "property_manager/instructions/form.html", {
+        "form": form,
+        "property": prop,
+        "title": "Add Instruction",
+    })
+
+
+@login_required
+def instruction_edit(request, pk):
+    instruction = get_object_or_404(Instruction, pk=pk, property__owner=request.user)
+    if request.method == "POST":
+        form = InstructionForm(request.POST, instance=instruction)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Instruction updated.")
+            return redirect("pm:instruction_list", property_pk=instruction.property.pk)
+    else:
+        form = InstructionForm(instance=instruction)
+    return render(request, "property_manager/instructions/form.html", {
+        "form": form,
+        "property": instruction.property,
+        "title": "Edit Instruction",
+    })
+
+
+@login_required
+def instruction_delete(request, pk):
+    instruction = get_object_or_404(Instruction, pk=pk, property__owner=request.user)
+    prop_pk = instruction.property.pk
+    if request.method == "POST":
+        instruction.delete()
+        messages.success(request, "Instruction deleted.")
+    return redirect("pm:instruction_list", property_pk=prop_pk)
+
+
+# ---------------------------------------------------------------------------
+# Experiences
+# ---------------------------------------------------------------------------
+
+@login_required
+def experience_list(request):
+    experiences = Experience.objects.filter(owner=request.user).order_by('-created_at')
+    return render(request, "property_manager/experiences/list.html", {
+        "experiences": experiences,
+    })
+
+
+@login_required
+def experience_create(request):
+    if request.method == "POST":
+        form = ExperienceForm(request.POST)
+        if form.is_valid():
+            exp = form.save(commit=False)
+            exp.owner = request.user
+            exp.save()
+            messages.success(request, f"Experience '{exp.title}' created.")
+            return redirect("pm:experience_detail", pk=exp.pk)
+    else:
+        form = ExperienceForm()
+    return render(request, "property_manager/experiences/form.html", {
+        "form": form,
+        "title": "Create Experience",
+    })
+
+
+@login_required
+def experience_detail(request, pk):
+    exp = get_object_or_404(Experience, pk=pk, owner=request.user)
+    if request.method == "POST":
+        form = ExperienceForm(request.POST, instance=exp)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Experience updated.")
+            return redirect("pm:experience_detail", pk=exp.pk)
+    else:
+        form = ExperienceForm(instance=exp)
+    return render(request, "property_manager/experiences/detail.html", {
+        "experience": exp,
+        "form": form,
+    })
+
+
+@login_required
+def experience_delete(request, pk):
+    exp = get_object_or_404(Experience, pk=pk, owner=request.user)
+    if request.method == "POST":
+        exp.delete()
+        messages.success(request, "Experience deleted.")
+    return redirect("pm:experience_list")
+
+
+# ---------------------------------------------------------------------------
+# Feedback (read-only)
+# ---------------------------------------------------------------------------
+
+@login_required
+def feedback_list(request):
+    feedback = Feedback.objects.all().order_by('-created_at')
+
+    # Filter by type
+    type_filter = request.GET.get("type", "")
+    if type_filter:
+        feedback = feedback.filter(feedback_type=type_filter)
+
+    # Filter by read status
+    read_filter = request.GET.get("read", "")
+    if read_filter == "unread":
+        feedback = feedback.filter(is_read=False)
+    elif read_filter == "read":
+        feedback = feedback.filter(is_read=True)
+
+    return render(request, "property_manager/feedback/list.html", {
+        "feedback_list": feedback,
+        "type_filter": type_filter,
+        "read_filter": read_filter,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Chat Logs
+# ---------------------------------------------------------------------------
+
+@login_required
+def chatlog_list(request):
+    properties = _user_properties(request.user)
+    chatlogs = ChatLog.objects.filter(
+        property__in=properties,
+    ).select_related("property").order_by("-created_at")
+
+    # Filter by property
+    property_filter = request.GET.get("property", "")
+    if property_filter:
+        chatlogs = chatlogs.filter(property_id=property_filter)
+
+    return render(request, "property_manager/chatlogs/list.html", {
+        "chatlogs": chatlogs[:100],
+        "properties": properties,
+        "property_filter": property_filter,
     })
 
 
@@ -147,7 +343,6 @@ def category_manage(request, property_pk):
     prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
     categories = prop.categories.prefetch_related("items").all()
 
-    # Handle new category creation
     if request.method == "POST" and "create_category" in request.POST:
         cat_form = CategoryForm(request.POST)
         if cat_form.is_valid():
@@ -209,7 +404,6 @@ def booking_list(request):
     properties = _user_properties(request.user)
     bookings = Booking.objects.filter(property__in=properties).select_related("property")
 
-    # Filters
     status_filter = request.GET.get("status", "")
     property_filter = request.GET.get("property", "")
 

@@ -17,6 +17,18 @@ urlpatterns = [
     path("properties/create/", views.property_create, name="property_create"),
     path("properties/<int:pk>/", views.property_detail, name="property_detail"),
 
+    # Instructions (scoped to a property)
+    path("properties/<int:property_pk>/instructions/", views.instruction_list, name="instruction_list"),
+    path("properties/<int:property_pk>/instructions/create/", views.instruction_create, name="instruction_create"),
+    path("instructions/<int:pk>/edit/", views.instruction_edit, name="instruction_edit"),
+    path("instructions/<int:pk>/delete/", views.instruction_delete, name="instruction_delete"),
+
+    # Experiences
+    path("experiences/", views.experience_list, name="experience_list"),
+    path("experiences/create/", views.experience_create, name="experience_create"),
+    path("experiences/<int:pk>/", views.experience_detail, name="experience_detail"),
+    path("experiences/<int:pk>/delete/", views.experience_delete, name="experience_delete"),
+
     # Categories & Services
     path("properties/<int:property_pk>/categories/", views.category_manage, name="category_manage"),
     path("categories/<int:pk>/edit/", views.category_edit, name="category_edit"),
@@ -41,6 +53,12 @@ urlpatterns = [
     # Chat
     path("chat/", views.chat_list, name="chat_list"),
     path("chat/<int:pk>/", views.chat_detail, name="chat_detail"),
+
+    # Chat Logs
+    path("chatlogs/", views.chatlog_list, name="chatlog_list"),
+
+    # Feedback
+    path("feedback/", views.feedback_list, name="feedback_list"),
 
     # Specials / Promotions
     path("specials/", views.special_list, name="special_list"),

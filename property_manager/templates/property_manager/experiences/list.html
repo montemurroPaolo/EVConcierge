@@ -1,0 +1,44 @@
+{% extends "property_manager/base.html" %}
+{% block title %}Experiences{% endblock %}
+{% block nav_experiences %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Experiences</h2>
+        <div class="breadcrumb">Local experiences, activities &amp; services</div>
+    </div>
+    <a href="{% url 'pm:experience_create' %}" class="btn btn-primary">+ Add Experience</a>
+</div>
+
+{% if experiences %}
+<div class="grid-3">
+    {% for exp in experiences %}
+    <a href="{% url 'pm:experience_detail' pk=exp.pk %}" class="property-card animate-in" style="text-decoration:none;color:inherit;">
+        <div class="card-img" style="background:linear-gradient(135deg, #1a2a1e, #0f4630);">
+            🎯
+            <div class="status-dot {% if exp.is_active %}active{% else %}inactive{% endif %}"></div>
+        </div>
+        <div class="card-body">
+            <h3>{{ exp.title }}</h3>
+            <div class="address">{{ exp.get_category_display }} · €{{ exp.price }}</div>
+            <div class="meta-row">
+                {% if exp.duration %}<span>⏱ {{ exp.duration }}min</span>{% endif %}
+                <span>{{ exp.get_group_size_display }}</span>
+                {% if exp.is_featured %}<span>⭐ Featured</span>{% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <h3>No experiences yet</h3>
+        <p>Create local experiences, activities, and services to recommend to your guests.</p>
+        <a href="{% url 'pm:experience_create' %}" class="btn btn-primary">+ Add Experience</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

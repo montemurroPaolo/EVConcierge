@@ -1,0 +1,47 @@
+{% extends "property_manager/base.html" %}
+{% block title %}{{ title }} — {{ property.name }}{% endblock %}
+{% block nav_properties %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>{{ title }}</h2>
+        <div class="breadcrumb"><a href="{% url 'pm:property_list' %}">Properties</a> / <a href="{% url 'pm:property_detail' pk=property.pk %}">{{ property.name }}</a> / <a href="{% url 'pm:instruction_list' property_pk=property.pk %}">Instructions</a> / {{ title }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}">Title</label>
+                {{ form.title }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.instruction_type.id_for_label }}">Type</label>
+                {{ form.instruction_type }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.order.id_for_label }}">Order</label>
+                {{ form.order }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.content.id_for_label }}">Content</label>
+            {{ form.content }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.video.id_for_label }}">Video URL (optional)</label>
+            {{ form.video }}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Instruction</button>
+            <a href="{% url 'pm:instruction_list' property_pk=property.pk %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

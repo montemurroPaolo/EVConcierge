@@ -1,0 +1,63 @@
+{% extends "property_manager/base.html" %}
+{% block title %}Instructions — {{ property.name }}{% endblock %}
+{% block nav_properties %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Instructions</h2>
+        <div class="breadcrumb"><a href="{% url 'pm:property_list' %}">Properties</a> / <a href="{% url 'pm:property_detail' pk=property.pk %}">{{ property.name }}</a> / Instructions</div>
+    </div>
+    <a href="{% url 'pm:instruction_create' property_pk=property.pk %}" class="btn btn-primary">+ Add Instruction</a>
+</div>
+
+{% if instructions %}
+<div class="card">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inst in instructions %}
+                <tr>
+                    <td class="text-muted">{{ inst.order }}</td>
+                    <td><strong>{{ inst.title }}</strong></td>
+                    <td><span class="badge badge-draft">{{ inst.get_instruction_type_display }}</span></td>
+                    <td class="text-sm text-muted">{{ inst.updated_at|timesince }} ago</td>
+                    <td>
+                        <div class="flex gap-2">
+                            <a href="{% url 'pm:instruction_edit' pk=inst.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+                            <form method="post" action="{% url 'pm:instruction_delete' pk=inst.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this instruction?')">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>No instructions yet</h3>
+        <p>Add check-in, WiFi, house rules, and other instructions for your guests.</p>
+        <a href="{% url 'pm:instruction_create' property_pk=property.pk %}" class="btn btn-primary">+ Add Instruction</a>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'pm:property_detail' pk=property.pk %}" class="btn btn-ghost">← Back to {{ property.name }}</a>
+</div>
+{% endblock %}

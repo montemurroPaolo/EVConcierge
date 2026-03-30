@@ -1,0 +1,77 @@
+{% extends "property_manager/base.html" %}
+{% block title %}Feedback{% endblock %}
+{% block nav_feedback %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>Feedback</h2>
+        <div class="breadcrumb">User feedback, bug reports &amp; suggestions</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+    <a href="{% url 'pm:feedback_list' %}" class="filter-btn {% if not type_filter and not read_filter %}active{% endif %}">All</a>
+    <a href="{% url 'pm:feedback_list' %}?read=unread" class="filter-btn {% if read_filter == 'unread' %}active{% endif %}">Unread</a>
+    <a href="{% url 'pm:feedback_list' %}?type=general" class="filter-btn {% if type_filter == 'general' %}active{% endif %}">General</a>
+    <a href="{% url 'pm:feedback_list' %}?type=bug_report" class="filter-btn {% if type_filter == 'bug_report' %}active{% endif %}">Bug Reports</a>
+    <a href="{% url 'pm:feedback_list' %}?type=feature_request" class="filter-btn {% if type_filter == 'feature_request' %}active{% endif %}">Feature Requests</a>
+</div>
+
+{% if feedback_list %}
+<div class="card">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Type</th>
+                    <th>From</th>
+                    <th>Rating</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fb in feedback_list %}
+                <tr>
+                    <td>
+                        <strong>{{ fb.subject }}</strong>
+                        <div class="text-xs text-muted">{{ fb.message|truncatechars:80 }}</div>
+                    </td>
+                    <td><span class="badge badge-draft">{{ fb.get_feedback_type_display }}</span></td>
+                    <td class="text-sm">
+                        {% if fb.user %}{{ fb.user.username }}{% elif fb.name %}{{ fb.name }}{% else %}Anonymous{% endif %}
+                    </td>
+                    <td>
+                        {% if fb.rating %}
+                        <span class="text-warning">{% for i in "12345" %}{% if forloop.counter <= fb.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if fb.is_read %}
+                        <span class="badge badge-past">Read</span>
+                        {% else %}
+                        <span class="badge badge-pending">Unread</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-sm text-muted">{{ fb.created_at|timesince }} ago</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">📨</div>
+        <h3>No feedback yet</h3>
+        <p>User feedback will appear here.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

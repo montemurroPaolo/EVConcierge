@@ -9,6 +9,7 @@
         <div class="breadcrumb"><a href="{% url 'pm:property_list' %}">Properties</a> / {{ property.name }}</div>
     </div>
     <div class="flex gap-2">
+        <a href="{% url 'pm:instruction_list' property_pk=property.pk %}" class="btn btn-secondary">📋 Instructions ({{ instructions_count }})</a>
         <a href="{% url 'pm:category_manage' property_pk=property.pk %}" class="btn btn-secondary">📁 Categories &amp; Services</a>
     </div>
 </div>
@@ -23,23 +24,29 @@
     </div>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+
+        <!-- Core Info -->
+        <h4 class="card-title">Core Information</h4>
         <div class="form-row">
             <div class="form-group">
                 <label for="{{ form.name.id_for_label }}">Property Name</label>
                 {{ form.name }}
             </div>
             <div class="form-group">
-                <label>Active</label>
-                <div class="form-check">
-                    {{ form.is_active }}
-                    <span class="text-sm">Property is active</span>
-                </div>
+                <label for="{{ form.city.id_for_label }}">City</label>
+                {{ form.city }}
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.address.id_for_label }}">Address</label>
-            {{ form.address }}
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.address.id_for_label }}">Address</label>
+                {{ form.address }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.neighborhood.id_for_label }}">Neighborhood</label>
+                {{ form.neighborhood }}
+            </div>
         </div>
 
         <div class="form-group">
@@ -47,11 +54,137 @@
             {{ form.description }}
         </div>
 
-        <div class="form-group">
-            <label for="{{ form.house_rules.id_for_label }}">House Rules</label>
-            {{ form.house_rules }}
+        <!-- Property Details -->
+        <h4 class="card-title mt-6">Property Details</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.property_type.id_for_label }}">Type</label>
+                {{ form.property_type }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.room_type.id_for_label }}">Room Type</label>
+                {{ form.room_type }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.capacity.id_for_label }}">Capacity</label>
+                {{ form.capacity }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.size.id_for_label }}">Size (m²)</label>
+                {{ form.size }}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.bedrooms.id_for_label }}">Bedrooms</label>
+                {{ form.bedrooms }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.beds.id_for_label }}">Beds</label>
+                {{ form.beds }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.bathrooms.id_for_label }}">Bathrooms</label>
+                {{ form.bathrooms }}
+            </div>
         </div>
 
+        <!-- Amenities -->
+        <h4 class="card-title mt-6">Amenities</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <div class="form-check">{{ form.has_wifi }} <span class="text-sm">WiFi</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.has_air_conditioning }} <span class="text-sm">Air Conditioning</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.has_heating }} <span class="text-sm">Heating</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.has_kitchen }} <span class="text-sm">Kitchen</span></div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <div class="form-check">{{ form.has_washer }} <span class="text-sm">Washer</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.has_netflix }} <span class="text-sm">Netflix</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.has_barbecue }} <span class="text-sm">Barbecue</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.has_garden }} <span class="text-sm">Garden</span></div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <div class="form-check">{{ form.has_balcony }} <span class="text-sm">Balcony</span></div>
+            </div>
+            <div class="form-group">
+                <label for="{{ form.pool.id_for_label }}">Pool</label>
+                {{ form.pool }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.parking.id_for_label }}">Parking</label>
+                {{ form.parking }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.parking_price.id_for_label }}">Parking Price (€/day)</label>
+                {{ form.parking_price }}
+            </div>
+        </div>
+
+        <!-- Booking & Rules -->
+        <h4 class="card-title mt-6">Booking &amp; Rules</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.check_in_time.id_for_label }}">Check-in Time</label>
+                {{ form.check_in_time }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.check_out_time.id_for_label }}">Check-out Time</label>
+                {{ form.check_out_time }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.minimum_stay.id_for_label }}">Min Stay (nights)</label>
+                {{ form.minimum_stay }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.cancellation_policy.id_for_label }}">Cancellation</label>
+                {{ form.cancellation_policy }}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <div class="form-check">{{ form.pets_allowed }} <span class="text-sm">Pets Allowed</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.smoking_allowed }} <span class="text-sm">Smoking Allowed</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.parties_allowed }} <span class="text-sm">Parties Allowed</span></div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.luggage_storage.id_for_label }}">Luggage Storage</label>
+                {{ form.luggage_storage }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.luggage_storage_price.id_for_label }}">Luggage Price (€/day)</label>
+                {{ form.luggage_storage_price }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.price_range.id_for_label }}">Price Range</label>
+                {{ form.price_range }}
+            </div>
+        </div>
+
+        <!-- WiFi & Guest Info -->
+        <h4 class="card-title mt-6">WiFi &amp; Guest Info</h4>
         <div class="form-row">
             <div class="form-group">
                 <label for="{{ form.wifi_network.id_for_label }}">WiFi Network</label>
@@ -62,25 +195,28 @@
                 {{ form.wifi_password }}
             </div>
         </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="{{ form.check_in_time.id_for_label }}">Check-in Time</label>
-                {{ form.check_in_time }}
-            </div>
-            <div class="form-group">
-                <label for="{{ form.check_out_time.id_for_label }}">Check-out Time</label>
-                {{ form.check_out_time }}
-            </div>
+        <div class="form-group">
+            <label for="{{ form.house_rules.id_for_label }}">House Rules</label>
+            {{ form.house_rules }}
         </div>
-
         <div class="form-group">
             <label for="{{ form.emergency_contacts.id_for_label }}">Emergency Contacts</label>
             {{ form.emergency_contacts }}
         </div>
 
+        <!-- Status -->
+        <h4 class="card-title mt-6">Status</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <div class="form-check">{{ form.is_active }} <span class="text-sm">Property is active</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.is_featured }} <span class="text-sm">Featured property</span></div>
+            </div>
+        </div>
+
         <!-- Photos Formset -->
-        <h3 class="card-title mt-6">Property Photos</h3>
+        <h4 class="card-title mt-6">Property Photos</h4>
         {{ photo_formset.management_form }}
         {% for pform in photo_formset %}
         <div class="formset-row">

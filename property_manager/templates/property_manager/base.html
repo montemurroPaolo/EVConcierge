@@ -51,6 +51,9 @@
                 <a href="{% url 'pm:property_list' %}" class="nav-link {% block nav_properties %}{% endblock %}">
                     <span class="icon">🏠</span> Properties
                 </a>
+                <a href="{% url 'pm:experience_list' %}" class="nav-link {% block nav_experiences %}{% endblock %}">
+                    <span class="icon">🎯</span> Experiences
+                </a>
                 <a href="{% url 'pm:booking_list' %}" class="nav-link {% block nav_bookings %}{% endblock %}">
                     <span class="icon">📅</span> Bookings
                 </a>
@@ -69,8 +72,14 @@
                     <span class="icon">💬</span> Chat
                     {% block chat_badge %}{% endblock %}
                 </a>
+                <a href="{% url 'pm:chatlog_list' %}" class="nav-link {% block nav_chatlogs %}{% endblock %}">
+                    <span class="icon">📝</span> Chat Logs
+                </a>
                 <a href="{% url 'pm:special_list' %}" class="nav-link {% block nav_specials %}{% endblock %}">
                     <span class="icon">⭐</span> Specials
+                </a>
+                <a href="{% url 'pm:feedback_list' %}" class="nav-link {% block nav_feedback %}{% endblock %}">
+                    <span class="icon">📨</span> Feedback
                 </a>
             </div>
         </nav>

@@ -1,0 +1,94 @@
+{% extends "property_manager/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block nav_experiences %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h2>{{ title }}</h2>
+        <div class="breadcrumb"><a href="{% url 'pm:experience_list' %}">Experiences</a> / {{ title }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+
+        <h4 class="card-title">Basic Information</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}">Title</label>
+                {{ form.title }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.price.id_for_label }}">Price (€)</label>
+                {{ form.price }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.duration.id_for_label }}">Duration (minutes)</label>
+                {{ form.duration }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.group_size.id_for_label }}">Group Size</label>
+                {{ form.group_size }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.address.id_for_label }}">Location</label>
+                {{ form.address }}
+            </div>
+        </div>
+
+        <h4 class="card-title mt-6">Booking Information</h4>
+        <div class="form-group">
+            <label for="{{ form.booking_method.id_for_label }}">How to Book</label>
+            {{ form.booking_method }}
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="{{ form.booking_phone.id_for_label }}">Booking Phone</label>
+                {{ form.booking_phone }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.booking_link.id_for_label }}">Booking Link</label>
+                {{ form.booking_link }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.referral_code.id_for_label }}">Referral Code</label>
+                {{ form.referral_code }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.ical_url.id_for_label }}">iCal URL</label>
+            {{ form.ical_url }}
+        </div>
+
+        <h4 class="card-title mt-6">Status</h4>
+        <div class="form-row">
+            <div class="form-group">
+                <div class="form-check">{{ form.is_active }} <span class="text-sm">Experience is active</span></div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">{{ form.is_featured }} <span class="text-sm">Featured experience</span></div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Experience</button>
+            <a href="{% url 'pm:experience_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
