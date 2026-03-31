@@ -41,7 +41,9 @@ from .models import (
 
 
 def _user_properties(user):
-    """Get properties owned by user."""
+    """Get properties owned by user (superusers see all)."""
+    if user.is_superuser:
+        return Property.objects.all()
     return Property.objects.filter(owner=user)
 
 
@@ -56,7 +58,10 @@ def dashboard(request):
 
     # Stats
     total_properties = properties.count()
-    total_experiences = Experience.objects.filter(owner=request.user).count()
+    if request.user.is_superuser:
+        total_experiences = Experience.objects.count()
+    else:
+        total_experiences = Experience.objects.filter(owner=request.user).count()
     active_bookings = Booking.objects.filter(
         property__in=properties,
         check_in_date__lte=today,
@@ -127,7 +132,8 @@ def property_create(request):
         form = PropertyForm(request.POST)
         if form.is_valid():
             prop = form.save(commit=False)
-            prop.owner = request.user
+            if not prop.owner_id:
+                prop.owner = request.user
             prop.save()
             messages.success(request, f"Property '{prop.name}' created.")
             return redirect("pm:property_detail", pk=prop.pk)
@@ -141,7 +147,10 @@ def property_create(request):
 
 @login_required
 def property_detail(request, pk):
-    prop = get_object_or_404(Property, pk=pk, owner=request.user)
+    if request.user.is_superuser:
+        prop = get_object_or_404(Property, pk=pk)
+    else:
+        prop = get_object_or_404(Property, pk=pk, owner=request.user)
     if request.method == "POST":
         form = PropertyForm(request.POST, instance=prop)
         photo_formset = PropertyPhotoFormSet(request.POST, request.FILES, instance=prop)
@@ -172,7 +181,10 @@ def property_detail(request, pk):
 
 @login_required
 def instruction_list(request, property_pk):
-    prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
+    if request.user.is_superuser:
+        prop = get_object_or_404(Property, pk=property_pk)
+    else:
+        prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
     instructions = prop.instructions.all()
     return render(request, "property_manager/instructions/list.html", {
         "property": prop,
@@ -182,7 +194,10 @@ def instruction_list(request, property_pk):
 
 @login_required
 def instruction_create(request, property_pk):
-    prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
+    if request.user.is_superuser:
+        prop = get_object_or_404(Property, pk=property_pk)
+    else:
+        prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
     if request.method == "POST":
         form = InstructionForm(request.POST)
         if form.is_valid():
@@ -202,7 +217,10 @@ def instruction_create(request, property_pk):
 
 @login_required
 def instruction_edit(request, pk):
-    instruction = get_object_or_404(Instruction, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        instruction = get_object_or_404(Instruction, pk=pk)
+    else:
+        instruction = get_object_or_404(Instruction, pk=pk, property__owner=request.user)
     if request.method == "POST":
         form = InstructionForm(request.POST, instance=instruction)
         if form.is_valid():
@@ -220,7 +238,10 @@ def instruction_edit(request, pk):
 
 @login_required
 def instruction_delete(request, pk):
-    instruction = get_object_or_404(Instruction, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        instruction = get_object_or_404(Instruction, pk=pk)
+    else:
+        instruction = get_object_or_404(Instruction, pk=pk, property__owner=request.user)
     prop_pk = instruction.property.pk
     if request.method == "POST":
         instruction.delete()
@@ -234,7 +255,10 @@ def instruction_delete(request, pk):
 
 @login_required
 def experience_list(request):
-    experiences = Experience.objects.filter(owner=request.user).order_by('-created_at')
+    if request.user.is_superuser:
+        experiences = Experience.objects.all().order_by('-created_at')
+    else:
+        experiences = Experience.objects.filter(owner=request.user).order_by('-created_at')
     return render(request, "property_manager/experiences/list.html", {
         "experiences": experiences,
     })
@@ -260,7 +284,10 @@ def experience_create(request):
 
 @login_required
 def experience_detail(request, pk):
-    exp = get_object_or_404(Experience, pk=pk, owner=request.user)
+    if request.user.is_superuser:
+        exp = get_object_or_404(Experience, pk=pk)
+    else:
+        exp = get_object_or_404(Experience, pk=pk, owner=request.user)
     if request.method == "POST":
         form = ExperienceForm(request.POST, instance=exp)
         if form.is_valid():
@@ -277,7 +304,10 @@ def experience_detail(request, pk):
 
 @login_required
 def experience_delete(request, pk):
-    exp = get_object_or_404(Experience, pk=pk, owner=request.user)
+    if request.user.is_superuser:
+        exp = get_object_or_404(Experience, pk=pk)
+    else:
+        exp = get_object_or_404(Experience, pk=pk, owner=request.user)
     if request.method == "POST":
         exp.delete()
         messages.success(request, "Experience deleted.")
@@ -340,7 +370,10 @@ def chatlog_list(request):
 
 @login_required
 def category_manage(request, property_pk):
-    prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
+    if request.user.is_superuser:
+        prop = get_object_or_404(Property, pk=property_pk)
+    else:
+        prop = get_object_or_404(Property, pk=property_pk, owner=request.user)
     categories = prop.categories.prefetch_related("items").all()
 
     if request.method == "POST" and "create_category" in request.POST:
@@ -363,7 +396,10 @@ def category_manage(request, property_pk):
 
 @login_required
 def category_edit(request, pk):
-    category = get_object_or_404(Category, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        category = get_object_or_404(Category, pk=pk)
+    else:
+        category = get_object_or_404(Category, pk=pk, property__owner=request.user)
     if request.method == "POST":
         cat_form = CategoryForm(request.POST, instance=category)
         item_formset = ServiceItemFormSet(request.POST, request.FILES, instance=category)
@@ -386,7 +422,10 @@ def category_edit(request, pk):
 
 @login_required
 def category_delete(request, pk):
-    category = get_object_or_404(Category, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        category = get_object_or_404(Category, pk=pk)
+    else:
+        category = get_object_or_404(Category, pk=pk, property__owner=request.user)
     prop_pk = category.property.pk
     if request.method == "POST":
         name = category.name
@@ -445,6 +484,8 @@ def booking_create(request):
 @login_required
 def booking_detail(request, pk):
     booking = get_object_or_404(
+        Booking, pk=pk,
+    ) if request.user.is_superuser else get_object_or_404(
         Booking, pk=pk, property__owner=request.user,
     )
     if request.method == "POST":
@@ -511,7 +552,10 @@ def order_detail(request, pk):
 @login_required
 def order_update_status(request, pk):
     """Quick status update via POST (from list view)."""
-    order = get_object_or_404(Order, pk=pk, booking__property__owner=request.user)
+    if request.user.is_superuser:
+        order = get_object_or_404(Order, pk=pk)
+    else:
+        order = get_object_or_404(Order, pk=pk, booking__property__owner=request.user)
     if request.method == "POST":
         new_status = request.POST.get("status", "")
         if new_status in dict(Order._meta.get_field("status").choices):
@@ -554,7 +598,10 @@ def notification_create(request):
 
 @login_required
 def notification_edit(request, pk):
-    notif = get_object_or_404(PushNotification, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        notif = get_object_or_404(PushNotification, pk=pk)
+    else:
+        notif = get_object_or_404(PushNotification, pk=pk, property__owner=request.user)
     if request.method == "POST":
         form = PushNotificationForm(request.POST, instance=notif, user=request.user)
         if form.is_valid():
@@ -571,7 +618,10 @@ def notification_edit(request, pk):
 
 @login_required
 def notification_delete(request, pk):
-    notif = get_object_or_404(PushNotification, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        notif = get_object_or_404(PushNotification, pk=pk)
+    else:
+        notif = get_object_or_404(PushNotification, pk=pk, property__owner=request.user)
     if request.method == "POST":
         notif.delete()
         messages.success(request, "Notification deleted.")
@@ -602,6 +652,8 @@ def chat_list(request):
 @login_required
 def chat_detail(request, pk):
     conversation = get_object_or_404(
+        ChatConversation, pk=pk,
+    ) if request.user.is_superuser else get_object_or_404(
         ChatConversation, pk=pk, booking__property__owner=request.user,
     )
     if request.method == "POST":
@@ -659,7 +711,10 @@ def special_create(request):
 
 @login_required
 def special_edit(request, pk):
-    special = get_object_or_404(Special, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        special = get_object_or_404(Special, pk=pk)
+    else:
+        special = get_object_or_404(Special, pk=pk, property__owner=request.user)
     if request.method == "POST":
         form = SpecialForm(request.POST, instance=special, user=request.user)
         if form.is_valid():
@@ -676,7 +731,10 @@ def special_edit(request, pk):
 
 @login_required
 def special_delete(request, pk):
-    special = get_object_or_404(Special, pk=pk, property__owner=request.user)
+    if request.user.is_superuser:
+        special = get_object_or_404(Special, pk=pk)
+    else:
+        special = get_object_or_404(Special, pk=pk, property__owner=request.user)
     if request.method == "POST":
         special.delete()
         messages.success(request, "Special deleted.")
